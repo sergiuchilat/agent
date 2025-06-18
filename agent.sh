@@ -2,7 +2,7 @@
 
 
 ### Configuration
-VERSION="1.0.2"
+VERSION="1.0.3"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
@@ -168,7 +168,7 @@ self_update() {
     echo "Checking for updates..."
 
     current_checksum=$(md5sum agent.sh | awk '{print $1}')
-    remote_script=$(curl -s "$AGENT_SOURCE_URL")
+    remote_script=$(curl -s -H "Cache-Control: no-cache" "$AGENT_SOURCE_URL")
     remote_checksum=$(echo "$remote_script" | md5sum | awk '{print $1}')
     if [ "$current_checksum" != "$remote_checksum" ]; then
         echo "Update available, installing..."
