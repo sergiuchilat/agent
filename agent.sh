@@ -2,7 +2,7 @@
 
 
 ### Configuration
-VERSION="1.0.6"
+VERSION="1.0.7"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
