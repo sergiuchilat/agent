@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Version 1.0.1
 
 ### Configuration
+VERSION="1.0.0"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
@@ -184,6 +184,8 @@ self_update() {
 }
 
 while true; do
+    echo "Agent version: $VERSION"
+    
     self_update
 
     timestamp=$(date +%Y%m%d_%H%M%S)
