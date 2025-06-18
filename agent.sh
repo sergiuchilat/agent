@@ -2,7 +2,7 @@
 
 
 ### Configuration
-VERSION="1.0.16"
+VERSION="1.0.17"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
@@ -11,8 +11,7 @@ API_COLLECTOR_URL="https://adt-agent.requestcatcher.com/test"
 
 UUID_FILE="$DATA_FOLDER/agent_uuid"
 
-### Main
-mkdir -p "$DATA_FOLDER"
+### Functions
 
 check_os() {
     if [ "$(uname -s)" != "Linux" ]; then
@@ -184,14 +183,19 @@ self_update() {
 
 }
 
+### Main scenario
+
+
 check_os
+
+mkdir -p "$DATA_FOLDER"
 
 UUID=$(generate_uuid)
 
 while true; do
     echo "Agent version: $VERSION"
     
-    self_update
+    # self_update
 
     timestamp=$(date +%Y%m%d_%H%M%S)
 
