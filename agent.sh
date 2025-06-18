@@ -166,6 +166,8 @@ mkdir -p "$DATA_FOLDER"
 
 UUID=$(generate_uuid)
 
+echo "Added some changes in version 23"
+
 while true; do
     echo "Agent version: $VERSION"
 
