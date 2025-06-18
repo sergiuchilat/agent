@@ -2,7 +2,7 @@
 
 
 ### Configuration
-VERSION="1.0.15"
+VERSION="1.0.16"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
@@ -14,6 +14,13 @@ UUID_FILE="$DATA_FOLDER/agent_uuid"
 ### Main
 mkdir -p "$DATA_FOLDER"
 
+check_os() {
+    if [ "$(uname -s)" != "Linux" ]; then
+        echo "Error: This agent only works on Linux systems" >&2
+        exit 1
+    fi
+}
+
 generate_uuid() {
     if [ ! -f "$UUID_FILE" ]; then
         generated_uuid=$(uuidgen)
@@ -21,8 +28,6 @@ generate_uuid() {
     fi
     echo $(cat "$UUID_FILE")
 }
-
-UUID=$(generate_uuid)
 
 generate_snapshot() {
     # Get users and groups information
@@ -38,37 +43,21 @@ generate_snapshot() {
     fi
 
     # Get OS information
-    if ! command -v uname >/dev/null 2>&1; then
-        echo "Warning: uname command not found" >&2
-        os_info="{\"error\": \"uname command not found\"}"
-    else
-        os_name=$(uname -s)
-        os_version=$(uname -r)
-        os_info="{\"name\": \"$os_name\", \"version\": \"$os_version\"}"
-    fi
+    os_name=$(cat /etc/os-release | grep "^NAME=" | cut -d'"' -f2)
+    os_version=$(cat /etc/os-release | grep "^VERSION=" | cut -d'"' -f2)
+    os_info="{\"name\": \"$os_name\", \"version\": \"$os_version\"}"
 
-    # Get open ports
-    if ! command -v netstat >/dev/null 2>&1; then
-        echo "Warning: netstat command not found" >&2
-        ports_info="{\"error\": \"netstat command not found\"}"
+    # Get open ports using ss command (modern replacement for netstat)
+    if ! command -v ss >/dev/null 2>&1; then
+        echo "Warning: ss command not found" >&2
+        ports_info="{\"error\": \"ss command not found\"}"
     else
-        # Get listening TCP and UDP ports
-        tcp_ports=$(netstat -tln | awk '/^tcp/ {split($4,a,":"); print a[length(a)]}' | sort -n | tr '\n' ',' | sed 's/,$//')
-        udp_ports=$(netstat -uln | awk '/^udp/ {split($4,a,":"); print a[length(a)]}' | sort -n | tr '\n' ',' | sed 's/,$//')
+        tcp_ports=$(ss -tln | awk 'NR>1 {split($4,a,":"); print a[length(a)]}' | sort -n | tr '\n' ',' | sed 's/,$//')
+        udp_ports=$(ss -uln | awk 'NR>1 {split($4,a,":"); print a[length(a)]}' | sort -n | tr '\n' ',' | sed 's/,$//')
         ports_info="{\"tcp\": [$tcp_ports], \"udp\": [$udp_ports]}"
     fi
 
-    # Get OS information
-    if ! command -v uname >/dev/null 2>&1; then
-        echo "Warning: uname command not found" >&2
-        os_info="{\"error\": \"uname command not found\"}"
-    else
-        os_name=$(uname -s)
-        os_version=$(uname -r)
-        os_info="{\"name\": \"$os_name\", \"version\": \"$os_version\"}"
-    fi
-
-    # Get number of RAM slots
+    # Get number of RAM slots using dmidecode
     if ! command -v dmidecode >/dev/null 2>&1; then
         echo "Warning: dmidecode command not found" >&2
         ram_slots="{\"error\": \"dmidecode command not found\"}"
@@ -87,7 +76,7 @@ generate_snapshot() {
         ip_info="{\"ipv4\": [${ipv4_addresses}], \"ipv6\": [${ipv6_addresses}]}"
     fi
 
-    # Check if required commands exist
+    # Check if required Linux commands exist
     if ! command -v lscpu >/dev/null 2>&1; then
         echo "Warning: lscpu command not found" >&2
     fi
@@ -108,7 +97,7 @@ generate_snapshot() {
         echo "Warning: hostname command not found" >&2
     fi
 
-    # Some older versions of lscpu don't support -J flag
+    # Get CPU info using lscpu
     if ! lscpu -J >/dev/null 2>&1; then
         cpu_info="{\"error\": \"lscpu JSON output not supported\"}"
     else
@@ -194,6 +183,10 @@ self_update() {
     fi
 
 }
+
+check_os
+
+UUID=$(generate_uuid)
 
 while true; do
     echo "Agent version: $VERSION"
