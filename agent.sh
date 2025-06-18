@@ -2,11 +2,11 @@
 
 
 ### Configuration
-VERSION="1.0.5"
+VERSION="1.0.6"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
-AGENT_SOURCE_URL="https://raw.githubusercontent.com/sergiuchilat/agent/refs/heads/main/agent.sh"
+AGENT_SOURCE_URL="https://raw.githubusercontent.com/sergiuchilat/agent/main/agent.sh"
 API_COLLECTOR_URL="https://adt-agent.requestcatcher.com/test"
 
 UUID_FILE="$DATA_FOLDER/agent_uuid"
@@ -39,7 +39,7 @@ generate_snapshot() {
 
     # Get OS information
     if ! command -v uname >/dev/null 2>&1; then
-        echo "Error: uname command not found" >&2
+        echo "Warning: uname command not found" >&2
         os_info="{\"error\": \"uname command not found\"}"
     else
         os_name=$(uname -s)
@@ -49,7 +49,7 @@ generate_snapshot() {
 
     # Get open ports
     if ! command -v netstat >/dev/null 2>&1; then
-        echo "Error: netstat command not found" >&2
+        echo "Warning: netstat command not found" >&2
         ports_info="{\"error\": \"netstat command not found\"}"
     else
         # Get listening TCP and UDP ports
@@ -60,7 +60,7 @@ generate_snapshot() {
 
     # Get OS information
     if ! command -v uname >/dev/null 2>&1; then
-        echo "Error: uname command not found" >&2
+        echo "Warning: uname command not found" >&2
         os_info="{\"error\": \"uname command not found\"}"
     else
         os_name=$(uname -s)
@@ -70,7 +70,7 @@ generate_snapshot() {
 
     # Get number of RAM slots
     if ! command -v dmidecode >/dev/null 2>&1; then
-        echo "Error: dmidecode command not found" >&2
+        echo "Warning: dmidecode command not found" >&2
         ram_slots="{\"error\": \"dmidecode command not found\"}"
     else
         ram_slots=$(dmidecode -t memory | grep -c "^Memory Device$")
@@ -79,7 +79,7 @@ generate_snapshot() {
 
     # Get IP addresses
     if ! command -v ip >/dev/null 2>&1; then
-        echo "Error: ip command not found" >&2
+        echo "Warning: ip command not found" >&2
         ip_info="{\"error\": \"ip command not found\"}"
     else
         ipv4_addresses=$(ip -4 addr show | awk '/inet / {print $2}' | tr '\n' ',' | sed 's/,$//')
@@ -89,23 +89,23 @@ generate_snapshot() {
 
     # Check if required commands exist
     if ! command -v lscpu >/dev/null 2>&1; then
-        echo "Error: lscpu command not found" >&2
+        echo "Warning: lscpu command not found" >&2
     fi
 
     if ! command -v free >/dev/null 2>&1; then
-        echo "Error: free command not found" >&2
+        echo "Warning: free command not found" >&2
     fi
 
     if ! command -v ps >/dev/null 2>&1; then
-        echo "Error: ps command not found" >&2
+        echo "Warning: ps command not found" >&2
     fi
 
     if ! command -v df >/dev/null 2>&1; then
-        echo "Error: df command not found" >&2
+        echo "Warning: df command not found" >&2
     fi
 
     if ! command -v hostname >/dev/null 2>&1; then
-        echo "Error: hostname command not found" >&2
+        echo "Warning: hostname command not found" >&2
     fi
 
     # Some older versions of lscpu don't support -J flag
