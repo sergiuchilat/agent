@@ -4,6 +4,7 @@
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
+AGENT_SOURCE_URL="https://github.com/sergiuchilat/agent/blob/main/agent.sh"
 API_COLLECTOR_URL="https://adt-agent.requestcatcher.com/test"
 
 UUID_FILE="$DATA_FOLDER/agent_uuid"
@@ -160,7 +161,29 @@ send_snapshot() {
     fi
 }
 
+
+self_update() {
+    echo "Checking for updates..."
+
+    current_checksum=$(md5sum agent.sh | awk '{print $1}')
+    remote_script=$(curl -s "$AGENT_SOURCE_URL")
+    remote_checksum=$(echo "$remote_script" | md5sum | awk '{print $1}')
+    if [ "$current_checksum" != "$remote_checksum" ]; then
+        echo "Update available, installing..."
+        echo "$remote_script" > agent.sh
+        chmod +x agent.sh
+        echo "Agent updated successfully"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Agent updated and restarted" >> "$DATA_FOLDER/update.log"
+        systemctl restart adt-infra-hub-agent.service
+        exit 0
+    else
+        echo "Agent is up to date"
+    fi
+}
+
 while true; do
+    self_update
+
     timestamp=$(date +%Y%m%d_%H%M%S)
 
     snapshot_json=$(get_system_snapshot)
