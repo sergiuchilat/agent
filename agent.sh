@@ -4,7 +4,7 @@
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
-AGENT_SOURCE_URL="https://github.com/sergiuchilat/agent/blob/main/agent.sh"
+AGENT_SOURCE_URL="https://raw.githubusercontent.com/sergiuchilat/agent/refs/heads/main/agent.sh"
 API_COLLECTOR_URL="https://adt-agent.requestcatcher.com/test"
 
 UUID_FILE="$DATA_FOLDER/agent_uuid"
