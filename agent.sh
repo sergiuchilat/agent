@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Version 1.0.0
+
 ### Configuration
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
