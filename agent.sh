@@ -4,7 +4,9 @@
 ### Configuration
 VERSION=${VERSION:-"latest"}
 DATA_FOLDER=${DATA_FOLDER:-"./data"}
-SLEEP_INTERVAL=${SLEEP_INTERVAL:-10}
+UPDATE_INTERVAL=${UPDATE_INTERVAL:-10}
+TOKEN=${TOKEN:-"123"}
+echo "TOKEN: $TOKEN"
 
 API_COLLECTOR_URL=${API_COLLECTOR_URL:-"123"} 
 echo "API_COLLECTOR_URL: $API_COLLECTOR_URL"
@@ -144,6 +146,7 @@ send_snapshot() {
     response=$(curl -s -X POST \
         -H "Content-Type: application/json" \
         -H "X-Agent-ID: $UUID" \
+        -H "Authorization: Bearer $TOKEN" \
         -d "$snapshot" \
         "$api_url")
 
@@ -175,6 +178,6 @@ while true; do
     echo "Sending snapshot to API..."
     send_snapshot "$snapshot_json"
 
-    echo "Sleeping for $SLEEP_INTERVAL seconds..."
-    sleep $SLEEP_INTERVAL
+    echo "Sleeping for $UPDATE_INTERVAL seconds..."
+    sleep $UPDATE_INTERVAL
 done
