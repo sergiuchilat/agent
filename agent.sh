@@ -2,11 +2,11 @@
 
 
 ### Configuration
-VERSION="1.0.7"
+VERSION="1.0.8"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
-AGENT_SOURCE_URL="https://raw.githubusercontent.com/sergiuchilat/agent/main/agent.sh"
+AGENT_SOURCE_URL="https://raw.githubusercontent.com/sergiuchilat/agent/main/agent.sh?cache_bust=$(date +%s)"
 API_COLLECTOR_URL="https://adt-agent.requestcatcher.com/test"
 
 UUID_FILE="$DATA_FOLDER/agent_uuid"
