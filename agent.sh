@@ -2,7 +2,7 @@
 
 
 ### Configuration
-VERSION="1.0.4"
+VERSION="1.0.5"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
@@ -24,7 +24,7 @@ generate_uuid() {
 
 UUID=$(generate_uuid)
 
-get_system_snapshot() {
+generate_snapshot() {
     # Get users and groups information
     if ! command -v getent >/dev/null 2>&1; then
         echo "Error: getent command not found" >&2
@@ -117,6 +117,7 @@ get_system_snapshot() {
 
     cat << EOF
 {
+    "agent_version": "$VERSION",
     "uuid": "$UUID",
     "timestamp": "$(date)",
     "os_info": $os_info,
@@ -190,7 +191,7 @@ while true; do
 
     timestamp=$(date +%Y%m%d_%H%M%S)
 
-    snapshot_json=$(get_system_snapshot)
+    snapshot_json=$(generate_snapshot)
 
     echo "$snapshot_json" > "$DATA_FOLDER/${timestamp}.json"
 
