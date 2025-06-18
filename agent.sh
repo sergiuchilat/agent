@@ -2,11 +2,11 @@
 
 
 ### Configuration
-VERSION="1.0.8"
+VERSION="1.0.9"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
-AGENT_SOURCE_URL="https://raw.githubusercontent.com/sergiuchilat/agent/main/agent.sh?cache_bust=$(date +%s)"
+AGENT_SOURCE_URL="https://raw.githubusercontent.com/sergiuchilat/agent/main/agent.sh"
 API_COLLECTOR_URL="https://adt-agent.requestcatcher.com/test"
 
 UUID_FILE="$DATA_FOLDER/agent_uuid"
@@ -169,7 +169,7 @@ self_update() {
     echo "Checking for updates..."
 
     current_checksum=$(md5sum agent.sh | awk '{print $1}')
-    remote_script=$(curl -s -H "Cache-Control: no-cache" "$AGENT_SOURCE_URL")
+    remote_script=$(curl -s -H "Cache-Control: no-cache" "$AGENT_SOURCE_URL?cache_bust=$(date +%s)")
     remote_checksum=$(echo "$remote_script" | md5sum | awk '{print $1}')
     if [ "$current_checksum" != "$remote_checksum" ]; then
         echo "Update available, installing..."
