@@ -2,12 +2,14 @@
 
 
 ### Configuration
-VERSION="1.0.18"
-DATA_FOLDER="./data"
-SLEEP_INTERVAL=10
+VERSION=${VERSION:-"latest"}
+DATA_FOLDER=${DATA_FOLDER:-"./data"}
+SLEEP_INTERVAL=${SLEEP_INTERVAL:-10}
 
-AGENT_SOURCE_URL="https://api.github.com/repos/sergiuchilat/agent/contents/agent.sh"
-API_COLLECTOR_URL="https://adt-agent.requestcatcher.com/test"
+API_COLLECTOR_URL=${API_COLLECTOR_URL:-"123"} 
+echo "API_COLLECTOR_URL: $API_COLLECTOR_URL"
+
+#API_COLLECTOR_URL=${API_COLLECTOR_URL:-"https://adt-agent.requestcatcher.com/test"} 
 
 UUID_FILE="$DATA_FOLDER/agent_uuid"
 
@@ -152,37 +154,6 @@ send_snapshot() {
     fi
 }
 
-
-self_update() {
-    # Get latest version from GitHub API
-    latest_script=$(curl -s -H "Accept: application/vnd.github.v3.raw" \
-        "$AGENT_SOURCE_URL")
-
-    if [ $? -ne 0 ]; then
-        echo "Failed to fetch latest version"
-        return 1
-    fi
-
-    # Save current script hash
-    current_hash=$(md5sum "$0" | cut -d' ' -f1)
-    
-    # Save latest script to temporary file and get its hash
-    echo "$latest_script" > "$0.tmp"
-    latest_hash=$(md5sum "$0.tmp" | cut -d' ' -f1)
-
-    if [ "$current_hash" != "$latest_hash" ]; then
-        echo "New version detected, updating..."
-        mv "$0.tmp" "$0"
-        chmod 755 "$0"
-        echo "Update successful, restarting..."
-        exec "$0"
-    else
-        echo "Already running latest version"
-        rm -f "$0.tmp"
-    fi
-
-}
-
 ### Main scenario
 
 
@@ -194,8 +165,6 @@ UUID=$(generate_uuid)
 
 while true; do
     echo "Agent version: $VERSION"
-    
-    # self_update
 
     timestamp=$(date +%Y%m%d_%H%M%S)
 
