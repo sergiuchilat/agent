@@ -137,7 +137,7 @@ get_system_snapshot() {
     "processes": [$(ps aux --no-headers | awk '{
         printf "%s{\"user\":\"%s\",\"pid\":%s,\"cpu\":%.1f,\"mem\":%.1f,\"vsz\":%s,\"rss\":%s,\"tty\":\"%s\",\"stat\":\"%s\",\"start\":\"%s\",\"time\":\"%s\",\"command\":\"%s\"}",
         (NR==1)?"":",", $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-    }')]
+    }')],
     "users_info": $users_info,
     "groups_info": $groups_info
 }
