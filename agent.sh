@@ -1,33 +1,175 @@
 #!/bin/bash
 
-# Create directory if it doesn't exist
+### Configuration
+DATA_FOLDER="./data"
+SLEEP_INTERVAL=10
 
-# Generate UUID
-UUID=$(uuidgen)
+API_COLLECTOR_URL="https://adt-agent.requestcatcher.com/test"
 
-# Get system information
-# data_folder="/etc/adt-infra-hub-agent"
-data_folder="./data"
+UUID_FILE="$DATA_FOLDER/agent_uuid"
 
-mkdir -p "$data_folder"
+### Main
+mkdir -p "$DATA_FOLDER"
 
-echo "System Snapshot - $(date)" > "$data_folder/snapshot.log"
-echo "-------------------" >> "$data_folder/snapshot.log"
-echo "" >> "$data_folder/snapshot.log"
+generate_uuid() {
+    if [ ! -f "$UUID_FILE" ]; then
+        generated_uuid=$(uuidgen)
+        echo "$generated_uuid" > "$UUID_FILE"
+    fi
+    echo $(cat "$UUID_FILE")
+}
 
-# CPU Information
-echo "CPU Information:" >> "$data_folder/snapshot.log"
-lscpu >> "$data_folder/snapshot.log"
-echo "" >> "$data_folder/snapshot.log"
+UUID=$(generate_uuid)
 
-# Memory Information
-echo "Memory Information:" >> "$data_folder/snapshot.log"
-free -h >> "$data_folder/snapshot.log"
-echo "" >> "$data_folder/snapshot.log"
+get_system_snapshot() {
+    # Get users and groups information
+    if ! command -v getent >/dev/null 2>&1; then
+        echo "Error: getent command not found" >&2
+        users_info="{\"error\": \"getent command not found\"}"
+        groups_info="{\"error\": \"getent command not found\"}"
+    else
+        users=$(getent passwd | awk -F: '{print "{\"username\":\"" $1 "\",\"uid\":" $3 ",\"home\":\"" $6 "\"}"}' | tr '\n' ',' | sed 's/,$//')
+        groups=$(getent group | awk -F: '{print "{\"name\":\"" $1 "\",\"gid\":" $3 "}"}' | tr '\n' ',' | sed 's/,$//')
+        users_info="{\"users\": [$users]}"
+        groups_info="{\"groups\": [$groups]}"
+    fi
 
-# Active Processes
-echo "Active Processes:" >> "$data_folder/snapshot.log"
-ps aux | head -n 20 >> "$data_folder/snapshot.log"
+    # Get OS information
+    if ! command -v uname >/dev/null 2>&1; then
+        echo "Error: uname command not found" >&2
+        os_info="{\"error\": \"uname command not found\"}"
+    else
+        os_name=$(uname -s)
+        os_version=$(uname -r)
+        os_info="{\"name\": \"$os_name\", \"version\": \"$os_version\"}"
+    fi
 
-# Create UUID file
-echo "$UUID" > "$data_folder/$UUID"
+    # Get open ports
+    if ! command -v netstat >/dev/null 2>&1; then
+        echo "Error: netstat command not found" >&2
+        ports_info="{\"error\": \"netstat command not found\"}"
+    else
+        # Get listening TCP and UDP ports
+        tcp_ports=$(netstat -tln | awk '/^tcp/ {split($4,a,":"); print a[length(a)]}' | sort -n | tr '\n' ',' | sed 's/,$//')
+        udp_ports=$(netstat -uln | awk '/^udp/ {split($4,a,":"); print a[length(a)]}' | sort -n | tr '\n' ',' | sed 's/,$//')
+        ports_info="{\"tcp\": [$tcp_ports], \"udp\": [$udp_ports]}"
+    fi
+
+    # Get OS information
+    if ! command -v uname >/dev/null 2>&1; then
+        echo "Error: uname command not found" >&2
+        os_info="{\"error\": \"uname command not found\"}"
+    else
+        os_name=$(uname -s)
+        os_version=$(uname -r)
+        os_info="{\"name\": \"$os_name\", \"version\": \"$os_version\"}"
+    fi
+
+    # Get number of RAM slots
+    if ! command -v dmidecode >/dev/null 2>&1; then
+        echo "Error: dmidecode command not found" >&2
+        ram_slots="{\"error\": \"dmidecode command not found\"}"
+    else
+        ram_slots=$(dmidecode -t memory | grep -c "^Memory Device$")
+        ram_slots="{\"total_slots\": $ram_slots}"
+    fi
+
+    # Get IP addresses
+    if ! command -v ip >/dev/null 2>&1; then
+        echo "Error: ip command not found" >&2
+        ip_info="{\"error\": \"ip command not found\"}"
+    else
+        ipv4_addresses=$(ip -4 addr show | awk '/inet / {print $2}' | tr '\n' ',' | sed 's/,$//')
+        ipv6_addresses=$(ip -6 addr show | awk '/inet6/ {print $2}' | tr '\n' ',' | sed 's/,$//')
+        ip_info="{\"ipv4\": [${ipv4_addresses}], \"ipv6\": [${ipv6_addresses}]}"
+    fi
+
+    # Check if required commands exist
+    if ! command -v lscpu >/dev/null 2>&1; then
+        echo "Error: lscpu command not found" >&2
+    fi
+
+    if ! command -v free >/dev/null 2>&1; then
+        echo "Error: free command not found" >&2
+    fi
+
+    if ! command -v ps >/dev/null 2>&1; then
+        echo "Error: ps command not found" >&2
+    fi
+
+    if ! command -v df >/dev/null 2>&1; then
+        echo "Error: df command not found" >&2
+    fi
+
+    if ! command -v hostname >/dev/null 2>&1; then
+        echo "Error: hostname command not found" >&2
+    fi
+
+    # Some older versions of lscpu don't support -J flag
+    if ! lscpu -J >/dev/null 2>&1; then
+        cpu_info="{\"error\": \"lscpu JSON output not supported\"}"
+    else
+        cpu_info=$(lscpu -J)
+    fi
+
+    cat << EOF
+{
+    "uuid": "$UUID",
+    "timestamp": "$(date)",
+    "os_info": $os_info,
+    "ports_info": $ports_info,
+    "ip_info": $ip_info,
+    "hostname": "$(hostname)",
+    "cpu_info": $cpu_info,
+    "memory_info": {
+        "total": "$(free -b | awk 'NR==2 {print $2}')",
+        "used": "$(free -b | awk 'NR==2 {print $3}')",
+        "free": "$(free -b | awk 'NR==2 {print $4}')",
+        "shared": "$(free -b | awk 'NR==2 {print $5}')",
+        "buffers": "$(free -b | awk 'NR==2 {print $6}')",
+        "cache": "$(free -b | awk 'NR==2 {print $7}')",
+        "total_slots": $ram_slots
+    },
+    "disk_info": {
+        "filesystems": [$(df -P | awk 'NR>1 {printf "%s{\"filesystem\":\"%s\",\"total\":%s,\"used\":%s,\"available\":%s,\"use_percent\":%d,\"mounted_on\":\"%s\"}", (NR==2)?"":",", $1, $2*1024, $3*1024, $4*1024, $5+0, $6}')]
+    },
+    "processes": [$(ps aux --no-headers | awk '{
+        printf "%s{\"user\":\"%s\",\"pid\":%s,\"cpu\":%.1f,\"mem\":%.1f,\"vsz\":%s,\"rss\":%s,\"tty\":\"%s\",\"stat\":\"%s\",\"start\":\"%s\",\"time\":\"%s\",\"command\":\"%s\"}",
+        (NR==1)?"":",", $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    }')]
+    "users_info": $users_info,
+    "groups_info": $groups_info
+}
+EOF
+}
+
+send_snapshot() {
+    snapshot=$1
+    api_url=${API_COLLECTOR_URL}
+
+    response=$(curl -s -X POST \
+        -H "Content-Type: application/json" \
+        -H "X-Agent-ID: $UUID" \
+        -d "$snapshot" \
+        "$api_url")
+
+    if [ $? -eq 0 ]; then
+        echo "Snapshot sent successfully"
+    else
+        echo "Failed to send snapshot"
+    fi
+}
+
+while true; do
+    timestamp=$(date +%Y%m%d_%H%M%S)
+
+    snapshot_json=$(get_system_snapshot)
+
+    echo "$snapshot_json" > "$DATA_FOLDER/${timestamp}.json"
+
+    echo "Sending snapshot to API..."
+    send_snapshot "$snapshot_json"
+
+    echo "Sleeping for $SLEEP_INTERVAL seconds..."
+    sleep $SLEEP_INTERVAL
+done
