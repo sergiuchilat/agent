@@ -2,7 +2,7 @@
 
 
 ### Configuration
-VERSION="1.0.13"
+VERSION="1.0.14"
 DATA_FOLDER="./data"
 SLEEP_INTERVAL=10
 
@@ -166,26 +166,33 @@ send_snapshot() {
 
 
 self_update() {
-    echo "Checking for updates..."
+    # Get latest version from GitHub API
+    latest_script=$(curl -s -H "Accept: application/vnd.github.v3.raw" \
+        "$AGENT_SOURCE_URL")
 
-    current_checksum=$(md5sum agent.sh | awk '{print $1}')
-    remote_script=$(curl -s -L -f -H "Accept: application/vnd.github.v3.raw" "$AGENT_SOURCE_URL" || echo "")
-    if [ -z "$remote_script" ]; then
-        echo "Failed to fetch remote script - URL may be invalid"
+    if [ $? -ne 0 ]; then
+        echo "Failed to fetch latest version"
         return 1
     fi
-    remote_checksum=$(echo "$remote_script" | md5sum | awk '{print $1}')
-    if [ "$current_checksum" != "$remote_checksum" ]; then
-        echo "Update available, installing..."
-        echo "$remote_script" > agent.sh
-        chmod +x agent.sh
-        echo "Agent updated successfully"
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Agent updated and restarted" >> "$DATA_FOLDER/update.log"
-        systemctl restart adt-infra-hub-agent.service
-        exit 0
+
+    # Save current script hash
+    current_hash=$(md5sum "$0" | cut -d' ' -f1)
+    
+    # Save latest script to temporary file and get its hash
+    echo "$latest_script" > "$0.tmp"
+    latest_hash=$(md5sum "$0.tmp" | cut -d' ' -f1)
+
+    if [ "$current_hash" != "$latest_hash" ]; then
+        echo "New version detected, updating..."
+        mv "$0.tmp" "$0"
+        chmod 755 "$0"
+        echo "Update successful, restarting..."
+        exec "$0"
     else
-        echo "Agent is up to date"
+        echo "Already running latest version"
+        rm -f "$0.tmp"
     fi
+
 }
 
 while true; do
