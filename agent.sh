@@ -2,13 +2,13 @@
 
 
 ### Configuration
-VERSION=${VERSION:-"latest"}
+VERSION=${VERSION:-"v1.0.25"}
 DATA_FOLDER=${DATA_FOLDER:-"./data"}
 UPDATE_INTERVAL=${UPDATE_INTERVAL:-10}
-TOKEN=${TOKEN:-"123"}
+TOKEN=${TOKEN:-"1@A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7"}
 echo "TOKEN: $TOKEN"
 
-API_COLLECTOR_URL=${API_COLLECTOR_URL:-"123"} 
+API_COLLECTOR_URL=${API_COLLECTOR_URL:-"https://dev-api-infrahub.adtelligent.com/api/v1/collector/agent/receive-raw-server-info"} 
 echo "API_COLLECTOR_URL: $API_COLLECTOR_URL"
 
 #API_COLLECTOR_URL=${API_COLLECTOR_URL:-"https://adt-agent.requestcatcher.com/test"} 
@@ -149,21 +149,17 @@ send_snapshot() {
     response=$(curl -s -X POST \
         -H "Content-Type: application/json" \
         -H "X-Agent-ID: $UUID" \
-        -H "Authorization: Bearer $TOKEN" \
+        -H "x-api-key: $TOKEN" \
         -d "$payload" \
         "$api_url")
 
-    if [ $? -eq 0 ]; then
-        echo "Snapshot sent successfully"
-    else
-        echo "Failed to send snapshot"
-    fi
+    echo "$response"
 }
 
 ### Main scenario
 
 
-check_os
+#check_os
 
 mkdir -p "$DATA_FOLDER"
 
