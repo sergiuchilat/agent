@@ -39,15 +39,15 @@ generate_snapshot() {
         users_info="{\"error\": \"getent command not found\"}"
         groups_info="{\"error\": \"getent command not found\"}"
     else
-        users=$(getent passwd | awk -F: '{print "{\"username\":\"" $1 "\",\"uid\":" $3 ",\"home\":\"" $6 "\"}"}' | tr '\n' ',' | sed 's/,$//')
-        groups=$(getent group | awk -F: '{print "{\"name\":\"" $1 "\",\"gid\":" $3 "}"}' | tr '\n' ',' | sed 's/,$//')
+        users=$(getent passwd | awk -F: '{gsub(/"/,"\\\"", $1); gsub(/"/,"\\\"", $6); print "{\"username\":\"" $1 "\",\"uid\":" $3 ",\"home\":\"" $6 "\"}"}' | tr '\n' ',' | sed 's/,$//')
+        groups=$(getent group | awk -F: '{gsub(/"/,"\\\"", $1); print "{\"name\":\"" $1 "\",\"gid\":" $3 "}"}' | tr '\n' ',' | sed 's/,$//')
         users_info="{\"users\": [$users]}"
         groups_info="{\"groups\": [$groups]}"
     fi
 
     # Get OS information
-    os_name=$(cat /etc/os-release | grep "^NAME=" | cut -d'"' -f2)
-    os_version=$(cat /etc/os-release | grep "^VERSION=" | cut -d'"' -f2)
+    os_name=$(cat /etc/os-release 2>/dev/null | grep "^NAME=" | cut -d'"' -f2 || echo "")
+    os_version=$(cat /etc/os-release 2>/dev/null | grep "^VERSION=" | cut -d'"' -f2 || echo "")
     os_info="{\"name\": \"$os_name\", \"version\": \"$os_version\"}"
 
     # Get open ports using ss command (modern replacement for netstat)
@@ -74,9 +74,16 @@ generate_snapshot() {
         echo "Warning: ip command not found" >&2
         ip_info="{\"error\": \"ip command not found\"}"
     else
-        ipv4_addresses=$(ip -4 addr show | awk '/inet / {print $2}' | tr '\n' ',' | sed 's/,$//')
-        ipv6_addresses=$(ip -6 addr show | awk '/inet6/ {print $2}' | tr '\n' ',' | sed 's/,$//')
-        ip_info="{\"ipv4\": [${ipv4_addresses}], \"ipv6\": [${ipv6_addresses}]}"
+        ipv4_addresses=$(ip -4 addr show | awk '/inet / {print "\""$2"\""}' | tr '\n' ',' | sed 's/,$//')
+        ipv6_addresses=$(ip -6 addr show | awk '/inet6/ {print "\""$2"\""}' | tr '\n' ',' | sed 's/,$//')
+        # Handle empty arrays
+        if [ -z "$ipv4_addresses" ]; then
+            ipv4_addresses=""
+        fi
+        if [ -z "$ipv6_addresses" ]; then
+            ipv6_addresses=""
+        fi
+        ip_info="{\"ipv4\": [$ipv4_addresses], \"ipv6\": [$ipv6_addresses]}"
     fi
 
     # Check if required Linux commands exist
@@ -107,6 +114,9 @@ generate_snapshot() {
         cpu_info=$(lscpu -J)
     fi
 
+    # Escape special characters in hostname
+    hostname=$(hostname | sed 's/"/\\"/g')
+
     cat << EOF
 {
     "agent_version": "$VERSION",
@@ -115,7 +125,7 @@ generate_snapshot() {
     "os_info": $os_info,
     "ports_info": $ports_info,
     "ip_info": $ip_info,
-    "hostname": "$(hostname)",
+    "hostname": "$hostname",
     "cpu_info": $cpu_info,
     "memory_info": {
         "total": "$(free -b | awk 'NR==2 {print $2}')",
@@ -127,12 +137,14 @@ generate_snapshot() {
         "total_slots": $ram_slots
     },
     "disk_info": {
-        "filesystems": [$(df -P | awk 'NR>1 {printf "%s{\"filesystem\":\"%s\",\"total\":%s,\"used\":%s,\"available\":%s,\"use_percent\":%d,\"mounted_on\":\"%s\"}", (NR==2)?"":",", $1, $2*1024, $3*1024, $4*1024, $5+0, $6}')]
+        "filesystems": [$(df -P | awk 'NR>1 {gsub(/"/,"\\\"", $1); gsub(/"/,"\\\"", $6); printf "%s{\"filesystem\":\"%s\",\"total\":%s,\"used\":%s,\"available\":%s,\"use_percent\":%d,\"mounted_on\":\"%s\"}", (NR==2)?"":",", $1, $2*1024, $3*1024, $4*1024, $5+0, $6}')]
     },
-    "processes": [$(ps aux --no-headers | awk '{
+    "processes": [$(ps aux --no-headers 2>/dev/null | awk '{
+        gsub(/"/,"\\\"", $1);
+        gsub(/"/,"\\\"", $11);
         printf "%s{\"user\":\"%s\",\"pid\":%s,\"cpu\":%.1f,\"mem\":%.1f,\"vsz\":%s,\"rss\":%s,\"tty\":\"%s\",\"stat\":\"%s\",\"start\":\"%s\",\"time\":\"%s\",\"command\":\"%s\"}",
         (NR==1)?"":",", $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-    }')],
+    }' || echo "")],
     "users_info": $users_info,
     "groups_info": $groups_info
 }
