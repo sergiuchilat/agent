@@ -143,11 +143,14 @@ send_snapshot() {
     snapshot=$1
     api_url=${API_COLLECTOR_URL}
 
+    # Wrap snapshot data in a "data" field
+    payload="{\"data\": $snapshot}"
+
     response=$(curl -s -X POST \
         -H "Content-Type: application/json" \
         -H "X-Agent-ID: $UUID" \
         -H "Authorization: Bearer $TOKEN" \
-        -d "$snapshot" \
+        -d "$payload" \
         "$api_url")
 
     if [ $? -eq 0 ]; then
@@ -166,7 +169,7 @@ mkdir -p "$DATA_FOLDER"
 
 UUID=$(generate_uuid)
 
-echo "Added some changes in version 23"
+echo "Added some changes 1"
 
 while true; do
     echo "Agent version: $VERSION"
