@@ -181,7 +181,10 @@ while true; do
     echo "$snapshot_json" > "$DATA_FOLDER/${timestamp}.json"
 
     echo "Sending snapshot to API..."
-    send_snapshot "$snapshot_json"
+    response=$(send_snapshot "$snapshot_json")
+    
+    # Save API response to file
+    echo "$response" > "$DATA_FOLDER/${timestamp}_response.json"
 
     echo "Sleeping for $UPDATE_INTERVAL seconds..."
     sleep $UPDATE_INTERVAL
