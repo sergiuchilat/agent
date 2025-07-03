@@ -8,7 +8,7 @@ UPDATE_INTERVAL=${UPDATE_INTERVAL:-10}
 TOKEN=${TOKEN:-"1@A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7"}
 echo "TOKEN: $TOKEN"
 
-API_COLLECTOR_URL=${API_COLLECTOR_URL:-"https://dev-api-infrahub.adtelligent.com/api/v1/collector/agent/receive-raw-server-info"} 
+API_COLLECTOR_URL=${API_COLLECTOR_URL:-"https://google.com"} 
 echo "API_COLLECTOR_URL: $API_COLLECTOR_URL"
 
 #API_COLLECTOR_URL=${API_COLLECTOR_URL:-"https://adt-agent.requestcatcher.com/test"} 
