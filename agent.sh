@@ -2,11 +2,11 @@
 
 
 ### Configuration
-VERSION=${VERSION}
-DATA_FOLDER=${DATA_FOLDER:-"/opt/adt-infra-hub-agent"}
-UPDATE_INTERVAL=${UPDATE_INTERVAL:-60}
-TOKEN=${TOKEN}
-API_COLLECTOR_URL=${API_COLLECTOR_URL}
+VERSION=""
+DATA_FOLDER=""
+UPDATE_INTERVAL=60
+TOKEN=""
+API_COLLECTOR_URL=""
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
