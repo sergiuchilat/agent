@@ -228,12 +228,12 @@ generate_snapshot() {
         free_mem=$(echo "$vm_stat_output" | grep "Pages free:" | awk '{print $3}' | sed 's/\.//')
         free_mem=$((free_mem * 4096))  # Convert pages to bytes
         used_mem=$((total_mem - free_mem))
-        memory_info="{\"total\": \"$total_mem\", \"used\": \"$used_mem\", \"free\": \"$free_mem\", \"shared\": \"0\", \"buffers\": \"0\", \"cache\": \"0\", \"total_slots\": $ram_slots}"
+                 memory_info="{\"total\": \"$total_mem\", \"used\": \"$used_mem\", \"free\": \"$free_mem\", \"shared\": \"0\", \"buffers\": \"0\", \"cache\": \"0\", \"total_slots\": 0}"
     else
         # Linux memory info
         if ! command -v free >/dev/null 2>&1; then
             echo "Warning: free command not found" >&2
-            memory_info="{\"error\": \"free command not found\", \"total_slots\": $ram_slots}"
+                         memory_info="{\"error\": \"free command not found\", \"total_slots\": 0}"
         else
             memory_info="{\"total\": \"$(free -b | awk 'NR==2 {print $2}')\", \"used\": \"$(free -b | awk 'NR==2 {print $3}')\", \"free\": \"$(free -b | awk 'NR==2 {print $4}')\", \"shared\": \"$(free -b | awk 'NR==2 {print $5}')\", \"buffers\": \"$(free -b | awk 'NR==2 {print $6}')\", \"cache\": \"$(free -b | awk 'NR==2 {print $7}')\", \"total_slots\": $ram_slots}"
         fi
