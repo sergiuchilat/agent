@@ -5,8 +5,9 @@
 VERSION=""
 DATA_FOLDER=""
 UPDATE_INTERVAL=60
-TOKEN=""
+TOKEN=""§
 API_COLLECTOR_URL=""
+SNAPSHOT_RETENTION_DAYS=1
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -31,9 +32,13 @@ while [[ $# -gt 0 ]]; do
             UPDATE_INTERVAL="${1#*=}"
             shift
             ;;
+        --snapshot_retention_days=*)
+            SNAPSHOT_RETENTION_DAYS="${1#*=}"
+            shift
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--token=TOKEN] [--version=VERSION] [--api_collector_url=URL] [--data_folder=PATH] [--update_interval=SECONDS]"
+            echo "Usage: $0 [--token=TOKEN] [--version=VERSION] [--api_collector_url=URL] [--data_folder=PATH] [--update_interval=SECONDS] [--snapshot_retention_days=DAYS]"
             exit 1
             ;;
     esac
@@ -304,7 +309,8 @@ collect_data_and_send() {
 
 clear_old_snapshots() {
     echo "Clearing old snapshots..."
-    find "$DATA_FOLDER" -type f -name "*.json" -mtime +1 -exec rm {} \;    
+    find "$DATA_FOLDER" -type f -name "*.json" -mtime +$SNAPSHOT_RETENTION_DAYS -exec rm {} \;    
+    echo "Old snapshots cleared successfully"
 }
 
 ### Main scenario
