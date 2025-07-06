@@ -44,6 +44,8 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+# Environment variables are already available if not set via command line arguments
+
 UUID_FILE="$DATA_FOLDER/agent_uuid"
 
 ### Functions
