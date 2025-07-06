@@ -10,7 +10,7 @@ API_COLLECTOR_URL=""
 SNAPSHOT_RETENTION_DAYS=1
 
 # Parse command line arguments
-while [[ $# -gt 0 ]]; do
+while [ $# -gt 0 ]; do
     case $1 in
         --token=*)
             TOKEN="${1#*=}"
