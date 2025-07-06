@@ -3,7 +3,7 @@
 
 ### Configuration
 VERSION=${VERSION}
-DATA_FOLDER=${DATA_FOLDER:-"./data"}
+DATA_FOLDER=${DATA_FOLDER:-"/opt/adt-infra-hub-agent"}
 UPDATE_INTERVAL=${UPDATE_INTERVAL:-60}
 TOKEN=${TOKEN}
 API_COLLECTOR_URL=${API_COLLECTOR_URL}
@@ -303,6 +303,7 @@ collect_data_and_send() {
 }
 
 clear_old_snapshots() {
+    echo "Clearing old snapshots..."
     find "$DATA_FOLDER" -type f -name "*.json" -mtime +1 -exec rm {} \;    
 }
 
